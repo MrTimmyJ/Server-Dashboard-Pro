@@ -18,21 +18,23 @@ const SESSION_SECRET = process.env.SESSION_SECRET || 'change_this_in_production'
 const USERS_FILE = path.join(__dirname, 'users.json');
 
 // Enhanced middleware stack
-// app.use(helmet({
-//   contentSecurityPolicy: {
-//     directives: {
-//       defaultSrc: ["'self'"],
-//       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-//       fontSrc: ["'self'", "https://fonts.gstatic.com"],
-//       scriptSrc: ["'self'", "'unsafe-inline'"],
-//       imgSrc: ["'self'", "data:", "https:"]
-//     }
-//   },
-//   crossOriginEmbedderPolicy: false
-// }));
 app.use(helmet({
-  contentSecurityPolicy: false
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "https:"]
+    }
+  },
+  crossOriginEmbedderPolicy: false
 }));
+
+// For local Development
+// app.use(helmet({
+//   contentSecurityPolicy: false
+// }));
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
@@ -41,31 +43,32 @@ app.set('trust proxy', 1);
 app.set('view engine', 'html');
 
 // Session configuration
-// app.use(session({
-//   name: 'server_dashboard.sid',
-//   secret: SESSION_SECRET,
-//   resave: false,
-//   saveUninitialized: false,
-//   cookie: {
-//     httpOnly: true,
-//     secure: process.env.NODE_ENV === 'production',
-//     sameSite: 'lax',
-//     maxAge: parseInt(process.env.SESSION_MAX_AGE) || 24 * 60 * 60 * 1000
-//   }
-// }));
-
 app.use(session({
   name: 'server_dashboard.sid',
   secret: SESSION_SECRET,
-  resave: true,  // ← Change to true
+  resave: false,
   saveUninitialized: false,
   cookie: {
     httpOnly: true,
-    secure: false,  // ← Change to false for local testing
+    secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
-    maxAge: 24 * 60 * 60 * 1000
+    maxAge: parseInt(process.env.SESSION_MAX_AGE) || 24 * 60 * 60 * 1000
   }
 }));
+
+// For local Development
+// app.use(session({
+//   name: 'server_dashboard.sid',
+//   secret: SESSION_SECRET,
+//   resave: true,  // ← Change to true
+//   saveUninitialized: false,
+//   cookie: {
+//     httpOnly: true,
+//     secure: false,  // ← Change to false for local testing
+//     sameSite: 'lax',
+//     maxAge: 24 * 60 * 60 * 1000
+//   }
+// }));
 
 // Rate limiting
 const loginLimiter = rateLimit({

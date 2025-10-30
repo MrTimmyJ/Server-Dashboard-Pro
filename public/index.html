@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Server Dashboard Pro v1.0</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loading" class="loading-screen">
+        <div class="loading-spinner"></div>
+        <p>Loading Server Dashboard...</p>
+    </div>
+
+    <!-- Main App -->
+    <div id="app" class="app-container hidden">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-content">
+                <div class="header-brand">
+                    <div class="logo">🚀</div>
+                    <div>
+                        <h1>Server Dashboard Pro</h1>
+                        <span class="version">v1.0</span>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <div class="server-status">
+                        <span class="status-indicator online"></span>
+                        <span>System Online</span>
+                    </div>
+                    <div class="user-menu">
+                        <span id="username-display">Admin</span>
+                        <button id="logout-btn" class="btn btn-outline btn-sm" title="Logout">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                                <polyline points="16 17 21 12 16 7"></polyline>
+                                <line x1="21" y1="12" x2="9" y2="12"></line>
+                            </svg>
+                            Logout
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="app-nav">
+            <div class="nav-container">
+                <button class="nav-item active" data-tab="overview">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
+                    </svg>
+                    Overview
+                </button>
+                <button class="nav-item" data-tab="performance">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                    </svg>
+                    Performance
+                </button>
+                <button class="nav-item" data-tab="containers">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                        <polyline points="7.5 4.21 12 6.81 16.5 4.21"></polyline>
+                        <polyline points="7.5 19.79 7.5 14.6 3 12"></polyline>
+                        <polyline points="21 12 16.5 14.6 16.5 19.79"></polyline>
+                        <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                        <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                    </svg>
+                    Containers
+                </button>
+                <button class="nav-item" data-tab="logs">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <polyline points="4 7 4 4 20 4 20 7"></polyline>
+                        <line x1="9" y1="20" x2="15" y2="20"></line>
+                        <line x1="12" y1="4" x2="12" y2="20"></line>
+                    </svg>
+                    System Logs
+                </button>
+                <button class="nav-item" data-tab="settings">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                    Settings
+                </button>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="app-main">
+            <!-- Overview Tab -->
+            <section id="overview" class="tab-content active">
+                <div class="grid-container">
+                    <!-- System Status -->
+                    <div class="card status-card">
+                        <div class="card-header">
+                            <h2>System Status</h2>
+                            <span class="last-updated" id="last-updated">Just now</span>
+                        </div>
+                        <div class="status-grid">
+                            <div class="status-item">
+                                <div class="status-icon cpu"></div>
+                                <div class="status-info">
+                                    <span class="status-label">CPU Usage</span>
+                                    <span class="status-value" id="cpu-usage">0%</span>
+                                </div>
+                            </div>
+                            <div class="status-item">
+                                <div class="status-icon memory"></div>
+                                <div class="status-info">
+                                    <span class="status-label">Memory</span>
+                                    <span class="status-value" id="memory-usage">0%</span>
+                                </div>
+                            </div>
+                            <div class="status-item">
+                                <div class="status-icon storage"></div>
+                                <div class="status-info">
+                                    <span class="status-label">Storage</span>
+                                    <span class="status-value" id="storage-usage">0%</span>
+                                </div>
+                            </div>
+                            <div class="status-item">
+                                <div class="status-icon network"></div>
+                                <div class="status-info">
+                                    <span class="status-label">Network</span>
+                                    <span class="status-value" id="network-usage">0 KB/s</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Stats -->
+                    <div class="card stats-card">
+                        <div class="card-header">
+                            <h2>Quick Stats</h2>
+                        </div>
+                        <div class="stats-grid">
+                            <div class="stat">
+                                <span class="stat-value" id="stat-uptime">0d 0h</span>
+                                <span class="stat-label">Uptime</span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-value" id="stat-processes">0</span>
+                                <span class="stat-label">Processes</span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-value" id="stat-containers">0</span>
+                                <span class="stat-label">Containers</span>
+                            </div>
+                            <div class="stat">
+                                <span class="stat-value" id="stat-load">0.00</span>
+                                <span class="stat-label">Load Avg</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Docker Containers -->
+                    <div class="card containers-card">
+                        <div class="card-header">
+                            <h2>Docker Containers</h2>
+                            <button id="refresh-containers" class="btn btn-sm btn-outline">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <path d="M23 4v6h-6"></path>
+                                    <path d="M1 20v-6h6"></path>
+                                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"></path>
+                                    <path d="M20.49 15a9 9 0 0 1-14.85 3.36L1 14"></path>
+                                </svg>
+                                Refresh
+                            </button>
+                        </div>
+                        <div class="containers-list" id="containers-list">
+                            <div class="empty-state">
+                                <p>No containers found or Docker not available</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- System Information -->
+                    <div class="card system-card">
+                        <div class="card-header">
+                            <h2>System Information</h2>
+                        </div>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <span class="info-label">OS</span>
+                                <span class="info-value" id="info-os">—</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Kernel</span>
+                                <span class="info-value" id="info-kernel">—</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Architecture</span>
+                                <span class="info-value" id="info-arch">—</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Hostname</span>
+                                <span class="info-value" id="info-hostname">—</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Performance Tab -->
+            <section id="performance" class="tab-content">
+                <div class="grid-container">
+                    <!-- CPU Monitor -->
+                    <div class="card chart-card">
+                        <div class="card-header">
+                            <h2>CPU Usage</h2>
+                            <span class="real-time">Real-time</span>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="cpu-chart" width="400" height="200"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Memory Monitor -->
+                    <div class="card chart-card">
+                        <div class="card-header">
+                            <h2>Memory Usage</h2>
+                            <span class="real-time">Real-time</span>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="memory-chart" width="400" height="200"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Storage Monitor -->
+                    <div class="card storage-card">
+                        <div class="card-header">
+                            <h2>Storage Overview</h2>
+                        </div>
+                        <div class="storage-list" id="storage-list">
+                            <!-- Dynamic storage items -->
+                        </div>
+                    </div>
+
+                    <!-- Network Monitor -->
+                    <div class="card chart-card">
+                        <div class="card-header">
+                            <h2>Network Activity</h2>
+                            <span class="real-time">Real-time</span>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="network-chart" width="400" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Containers Tab -->
+            <section id="containers" class="tab-content">
+                <div class="containers-header">
+                    <h2>Docker Container Management</h2>
+                    <div class="container-actions">
+                        <button id="start-all-containers" class="btn btn-success btn-sm">
+                            Start All
+                        </button>
+                        <button id="stop-all-containers" class="btn btn-danger btn-sm">
+                            Stop All
+                        </button>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table class="containers-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Image</th>
+                                <th>Status</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="containers-table-body">
+                            <!-- Dynamic container rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Logs Tab -->
+            <section id="logs" class="tab-content">
+                <div class="logs-header">
+                    <h2>System Logs</h2>
+                    <div class="logs-controls">
+                        <select id="log-type" class="select">
+                            <option value="syslog">System Logs</option>
+                            <option value="auth">Auth Logs</option>
+                        </select>
+                        <select id="log-lines" class="select">
+                            <option value="50">50 lines</option>
+                            <option value="100">100 lines</option>
+                            <option value="200">200 lines</option>
+                        </select>
+                        <button id="refresh-logs" class="btn btn-primary btn-sm">
+                            Refresh
+                        </button>
+                        <button id="clear-logs" class="btn btn-outline btn-sm">
+                            Clear
+                        </button>
+                    </div>
+                </div>
+                <div class="card logs-card">
+                    <div class="logs-container">
+                        <pre id="system-logs" class="logs-content"></pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Settings Tab -->
+            <section id="settings" class="tab-content">
+                <div class="grid-container">
+                    <!-- Dashboard Settings -->
+                    <div class="card settings-card">
+                        <div class="card-header">
+                            <h2>Dashboard Settings</h2>
+                        </div>
+                        <div class="settings-form">
+                            <div class="form-group">
+                                <label for="refresh-interval">Refresh Interval (seconds)</label>
+                                <input type="number" id="refresh-interval" min="2" max="300" value="5" class="input">
+                                <span class="help-text">How often to update dashboard data</span>
+                            </div>
+                            <div class="form-group">
+                                <label for="theme-select">Theme</label>
+                                <select id="theme-select" class="select">
+                                    <option value="dark">Dark</option>
+                                    <option value="light">Light</option>
+                                    <option value="auto">Auto</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="auto-refresh" checked>
+                                    <span class="checkmark"></span>
+                                    Enable auto-refresh
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- System Information -->
+                    <div class="card info-card">
+                        <div class="card-header">
+                            <h2>About</h2>
+                        </div>
+                        <div class="about-content">
+                            <div class="about-item">
+                                <strong>Server Dashboard Pro</strong>
+                                <span>v1.0</span>
+                            </div>
+                            <div class="about-item">
+                                <strong>Node.js</strong>
+                                <span id="node-version">—</span>
+                            </div>
+                            <div class="about-item">
+                                <strong>Uptime</strong>
+                                <span id="dashboard-uptime">—</span>
+                            </div>
+                            <div class="about-item">
+                                <strong>Last Update</strong>
+                                <span id="last-update-time">—</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Toast Notifications -->
+        <div id="toast-container" class="toast-container"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

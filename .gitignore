@@ -1,0 +1,6 @@
+# Secrets and sensitive files
+.env
+users.json
+node_modules/
+*.log
+.DS_Store

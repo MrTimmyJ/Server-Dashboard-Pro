@@ -105,7 +105,10 @@
                     <div class="card status-card">
                         <div class="card-header">
                             <h2>System Status</h2>
-                            <span class="last-updated" id="last-updated">Just now</span>
+                        	<button id="manual-refresh" class="btn btn-sm btn-outline">
+        			    🔄 Refresh Now
+    				</button>    
+			    <span class="last-updated" id="last-updated">Just now</span>
                         </div>
                         <div class="status-grid">
                             <div class="status-item">
@@ -331,7 +334,7 @@
                         <div class="settings-form">
                             <div class="form-group">
                                 <label for="refresh-interval">Refresh Interval (seconds)</label>
-                                <input type="number" id="refresh-interval" min="2" max="300" value="5" class="input">
+                                <input type="number" id="refresh-interval" min="2" max="300" value="30" class="input">
                                 <span class="help-text">How often to update dashboard data</span>
                             </div>
                             <div class="form-group">
@@ -344,7 +347,7 @@
                             </div>
                             <div class="form-group">
                                 <label class="checkbox-label">
-                                    <input type="checkbox" id="auto-refresh" checked>
+                                    <input type="checkbox" id="auto-refresh">
                                     <span class="checkmark"></span>
                                     Enable auto-refresh
                                 </label>

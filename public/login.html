@@ -137,7 +137,7 @@
             
             <div id="error-message" class="error-message"></div>
             
-            <form class="login-form" id="login-form" method="POST" action="/api/login">
+            <form class="login-form" id="login-form">
                 <div class="form-group">
                     <label for="username">Username</label>
                     <input type="text" id="username" name="username" class="input" placeholder="Enter your username" required autocomplete="username">
@@ -149,7 +149,8 @@
                 </div>
                 
                 <button type="submit" class="login-btn" id="login-btn">
-                    Sign In
+                    <span id="login-text">Sign In</span>
+                    <span id="login-spinner" style="display: none;">⏳</span>
                 </button>
             </form>
             
@@ -162,7 +163,7 @@
         </div>
     </div>
 
-    <!-- <script>
+    <script>
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             
@@ -180,7 +181,7 @@
             errorMessage.style.display = 'none';
             
             try {
-                const response = await fetch('/api/login', {
+                const response = await fetch('/dashboard/api/login', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -188,12 +189,21 @@
                     body: JSON.stringify({ username, password })
                 });
                 
-                const data = await response.json();
+                //const data = await response.json();
                 
-                if (data.success) {
+               // if (data.success) {
                     // Redirect to dashboard
-                    window.location.href = '/';
+               //     window.location.href = '/';
+               // } else {
+               //     throw new Error(data.error || 'Login failed');
+               // }
+
+
+                if (response.ok) {
+                    // Redirect to dashboard
+                    window.location.href = '/dashboard/';
                 } else {
+                    const data = await response.json();
                     throw new Error(data.error || 'Login failed');
                 }
             } catch (error) {
@@ -209,6 +219,6 @@
         
         // Focus username field on load
         document.getElementById('username').focus();
-    </script> -->
+    </script>
 </body>
 </html>

@@ -8,9 +8,29 @@ const fs = require('fs-extra');
 const path = require('path');
 const si = require('systeminformation');
 const Docker = require('dockerode');
+const { createClient } = require('redis');
+const { RedisStore } = require('connect-redis');
 
 const app = express();
 const docker = new Docker();
+
+const redisClient = createClient({
+  socket: {
+    host: 'localhost',
+    port: 6379
+  }
+});
+
+// Connect to Redis
+redisClient.connect().catch(console.error);
+
+redisClient.on('error', (err) => {
+  console.log('Redis error: ', err);
+});
+
+redisClient.on('connect', () => {
+  console.log('✅ Connected to Redis');
+});
 
 const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || '0.0.0.0';
@@ -18,23 +38,24 @@ const SESSION_SECRET = process.env.SESSION_SECRET || 'change_this_in_production'
 const USERS_FILE = path.join(__dirname, 'users.json');
 
 // Enhanced middleware stack
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-      fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      scriptSrc: ["'self'", "'unsafe-inline'"],
-      imgSrc: ["'self'", "data:", "https:"]
-    }
-  },
-  crossOriginEmbedderPolicy: false
-}));
+//app.use(helmet({
+//  contentSecurityPolicy: {
+//    directives: {
+//      defaultSrc: ["'self'"],
+//      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+//      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+//      scriptSrc: ["'self'", "'unsafe-inline'"],
+//      imgSrc: ["'self'", "data:", "https:"],
+//      connectSrc: ["'self'", "ws:", "wss:"]
+//    }
+//  },
+//  crossOriginEmbedderPolicy: false
+//}));
 
 // For local Development
-// app.use(helmet({
-//   contentSecurityPolicy: false
-// }));
+ app.use(helmet({
+   contentSecurityPolicy: false
+ }));
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
@@ -43,32 +64,37 @@ app.set('trust proxy', 1);
 app.set('view engine', 'html');
 
 // Session configuration
+//app.use(session({
+//  name: 'server_dashboard.sid',
+//  secret: SESSION_SECRET,
+//  resave: false,
+//  saveUninitialized: false,
+//  cookie: {
+//    httpOnly: true,
+//    secure: process.env.NODE_ENV === 'production',
+//    sameSite: 'lax',
+//    maxAge: 24 * 60 * 60 * 1000,
+//    path: '/dashboard/'
+   // maxAge: parseInt(process.env.SESSION_MAX_AGE) || 24 * 60 * 60 * 1000
+//  }
+//}));
+
+// For local Development
 app.use(session({
+  store: new RedisStore({ client: redisClient }),
   name: 'server_dashboard.sid',
   secret: SESSION_SECRET,
+  //resave: true,  // ← Change to true
   resave: false,
   saveUninitialized: false,
   cookie: {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: false,  // ← Change to false for local testing
     sameSite: 'lax',
-    maxAge: parseInt(process.env.SESSION_MAX_AGE) || 24 * 60 * 60 * 1000
+    maxAge: 24 * 60 * 60 * 1000,
+    path: '/dashboard/'
   }
 }));
-
-// For local Development
-// app.use(session({
-//   name: 'server_dashboard.sid',
-//   secret: SESSION_SECRET,
-//   resave: true,  // ← Change to true
-//   saveUninitialized: false,
-//   cookie: {
-//     httpOnly: true,
-//     secure: false,  // ← Change to false for local testing
-//     sameSite: 'lax',
-//     maxAge: 24 * 60 * 60 * 1000
-//   }
-// }));
 
 // Rate limiting
 const loginLimiter = rateLimit({
@@ -80,7 +106,8 @@ const loginLimiter = rateLimit({
 
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: parseInt(process.env.RATE_LIMIT_MAX_API) || 100,
+  max: 1000,
+  // max: parseInt(process.env.RATE_LIMIT_MAX_API) || 100,
   message: { error: 'Too many API requests.' },
   standardHeaders: true
 });
@@ -153,11 +180,11 @@ function ensureAuth(req, res, next) {
   if (req.path.startsWith('/api/') || req.xhr) {
     return res.status(401).json({ error: 'Authentication required' });
   }
-  res.redirect('/login.html');
+  res.redirect('/dashboard/login.html');
 }
 
 // Routes
-app.post('/api/login', loginLimiter, async (req, res) => {
+app.post('/dashboard/api/login', loginLimiter, async (req, res) => {
   try {
     console.log('Login attempt:', req.body.username);
     const { username, password } = req.body;
@@ -181,7 +208,7 @@ app.post('/api/login', loginLimiter, async (req, res) => {
     };
 
     console.log('Login successful, session:', req.session.user);
-    res.redirect('/');
+    res.redirect('/dashboard/');
     
   } catch (error) {
     console.log('Login error:', error);
@@ -189,14 +216,15 @@ app.post('/api/login', loginLimiter, async (req, res) => {
   }
 });
 
-app.post('/api/logout', ensureAuth, (req, res) => {
+app.post('/dashboard/api/logout', ensureAuth, (req, res) => {
   req.session.destroy((err) => {
     res.clearCookie('server_dashboard.sid');
     res.json({ success: true, message: 'Logged out successfully' });
   });
 });
 
-app.get('/api/auth/check', ensureAuth, (req, res) => {
+app.get('/dashboard/api/auth/check', ensureAuth, (req, res) => {
+  console.log('Auth check - user:', req.session.user);
   res.json({ 
     authenticated: true, 
     user: req.session.user 
@@ -204,7 +232,7 @@ app.get('/api/auth/check', ensureAuth, (req, res) => {
 });
 
 // Enhanced API endpoints
-app.get('/api/system/info', ensureAuth, apiLimiter, async (req, res) => {
+app.get('/dashboard/api/system/info', ensureAuth, apiLimiter, async (req, res) => {
   try {
     const systemInfo = await getSystemInfo();
     res.json(systemInfo);
@@ -213,12 +241,13 @@ app.get('/api/system/info', ensureAuth, apiLimiter, async (req, res) => {
   }
 });
 
-app.get('/api/system/stats', ensureAuth, apiLimiter, async (req, res) => {
+app.get('/dashboard/api/system/stats', ensureAuth, apiLimiter, async (req, res) => {
   try {
-    const [currentLoad, mem, fsSize] = await Promise.all([
+    const [currentLoad, mem, fsSize, time] = await Promise.all([
       si.currentLoad(),
       si.mem(),
-      si.fsSize()
+      si.fsSize(),
+      si.time()
     ]);
 
     const rootFs = fsSize.find(fs => fs.mount === '/') || fsSize[0];
@@ -228,14 +257,16 @@ app.get('/api/system/stats', ensureAuth, apiLimiter, async (req, res) => {
       cpu: parseFloat(currentLoad.currentLoad.toFixed(1)),
       memory: parseFloat(((mem.used / mem.total) * 100).toFixed(1)),
       storage: parseFloat(storagePercent),
+      uptime: time.uptime,
       timestamp: new Date().toISOString()
     });
   } catch (error) {
+    console.error('Stats endpoint error:', error);
     res.status(500).json({ error: error.message });
   }
 });
 
-app.get('/api/docker/containers', ensureAuth, async (req, res) => {
+app.get('/dashboard/api/docker/containers', ensureAuth, async (req, res) => {
   try {
     if (process.env.ENABLE_DOCKER === 'false') {
       return res.json([]);
@@ -259,7 +290,7 @@ app.get('/api/docker/containers', ensureAuth, async (req, res) => {
   }
 });
 
-app.post('/api/docker/containers/:id/:action', ensureAuth, async (req, res) => {
+app.post('/dashboard/api/docker/containers/:id/:action', ensureAuth, async (req, res) => {
   try {
     const { id, action } = req.params;
     const container = docker.getContainer(id);
@@ -276,7 +307,7 @@ app.post('/api/docker/containers/:id/:action', ensureAuth, async (req, res) => {
   }
 });
 
-app.get('/api/system/logs', ensureAuth, async (req, res) => {
+app.get('/dashboard/api/system/logs', ensureAuth, async (req, res) => {
   try {
     if (process.env.ENABLE_SYSTEM_LOGS === 'false') {
       return res.json({ logs: ['Log access disabled'], type: 'disabled' });
@@ -309,7 +340,7 @@ app.get('/api/system/logs', ensureAuth, async (req, res) => {
 });
 
 // Serve static files
-app.use(express.static(path.join(__dirname, 'public'), {
+app.use('/dashboard', express.static(path.join(__dirname, 'public'), {
   maxAge: process.env.NODE_ENV === 'production' ? '1h' : '0',
   setHeaders: (res, path) => {
     if (path.endsWith('.html')) {
@@ -319,17 +350,28 @@ app.use(express.static(path.join(__dirname, 'public'), {
 }));
 
 // Login page (public)
-app.get('/login.html', (req, res) => {
+app.get('/dashboard/login.html', (req, res) => {
   if (req.session.user) {
-    return res.redirect('/');
+    return res.redirect('/dashboard/');
   }
   res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
 // Protect all other routes
-app.use(['/', '/index.html'], ensureAuth, (req, res) => {
+//app.use(['/', '/index.html'], ensureAuth, (req, res) => {
+//  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+//});
+
+
+// Protect all other routes
+app.get('/dashboard/', ensureAuth, (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
+
+app.get('/dashboard/index.html', ensureAuth, (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 
 // 404 handler
 app.use((req, res) => {
@@ -355,7 +397,7 @@ app.use((error, req, res, next) => {
 
 // Start server
 app.listen(PORT, HOST, () => {
-  console.log(`🚀 Server Dashboard Pro v1.0`);
+  console.log(`Server Dashboard`);
   console.log(`📍 http://${HOST}:${PORT}`);
   console.log(`🔐 Authentication: Enabled`);
   console.log(`🐳 Docker: ${process.env.ENABLE_DOCKER !== 'false' ? 'Enabled' : 'Disabled'}`);

@@ -2,7 +2,7 @@
 class ServerDashboard {
     constructor() {
         this.config = {
-            refreshInterval: 5000,
+            refreshInterval: 30000,
             chartHistory: 60,
             theme: 'dark'
         };
@@ -30,24 +30,26 @@ class ServerDashboard {
         this.setupEventListeners();
         this.loadSettings();
         this.initializeCharts();
-        this.startPolling();
+        //this.startPolling();
         this.hideLoadingScreen();
+
+	this.fetchAllData();
     }
 
     async checkAuth() {
         try {
-            const response = await fetch('/api/auth/check');
+            const response = await fetch('/dashboard/api/auth/check');
             if (response.ok) {
                 const data = await response.json();
                 this.state.authenticated = true;
                 this.state.user = data.user;
                 this.updateUserDisplay();
             } else {
-                window.location.href = '/login.html';
+                window.location.href = '/dashboard/login.html';
             }
         } catch (error) {
             console.error('Auth check failed:', error);
-            window.location.href = '/login.html';
+            window.location.href = '/dashboard/login.html';
         }
     }
 
@@ -62,6 +64,11 @@ class ServerDashboard {
         // Logout
         document.getElementById('logout-btn').addEventListener('click', () => {
             this.logout();
+        });
+
+	// Manual Refresh Button
+        document.getElementById('manual-refresh')?.addEventListener('click', () => {
+            this.fetchAllData();
         });
 
         // Refresh buttons
@@ -139,8 +146,8 @@ class ServerDashboard {
 
     async logout() {
         try {
-            await fetch('/api/logout', { method: 'POST' });
-            window.location.href = '/login.html';
+            await fetch('/dashboard/api/logout', { method: 'POST' });
+            window.location.href = '/dashboard/login.html';
         } catch (error) {
             console.error('Logout failed:', error);
         }
@@ -181,19 +188,23 @@ class ServerDashboard {
     toggleAutoRefresh(enabled) {
         if (enabled) {
             this.startPolling();
+	    this.showToast('Auto-refresh enabled', 'success');
         } else {
             this.stopPolling();
+	    this.showToast('Auto-refresh disabled', 'info');
         }
     }
 
     startPolling() {
         this.stopPolling();
+
         this.pollInterval = setInterval(() => {
             this.fetchAllData();
         }, this.config.refreshInterval);
         
+	console.log('Auto-refresh started:', this.config.refreshInterval + 'ms');
         // Initial fetch
-        this.fetchAllData();
+        //this.fetchAllData();
     }
 
     stopPolling() {
@@ -225,7 +236,7 @@ class ServerDashboard {
 
     async fetchSystemStats() {
         try {
-            const response = await fetch('/api/system/stats');
+            const response = await fetch('/dashboard/api/system/stats');
             if (!response.ok) throw new Error('Failed to fetch stats');
             
             const stats = await response.json();
@@ -239,7 +250,7 @@ class ServerDashboard {
 
     async fetchSystemInfo() {
         try {
-            const response = await fetch('/api/system/info');
+            const response = await fetch('/dashboard/api/system/info');
             if (!response.ok) throw new Error('Failed to fetch system info');
             
             const info = await response.json();
@@ -251,7 +262,7 @@ class ServerDashboard {
 
     async fetchContainers() {
         try {
-            const response = await fetch('/api/docker/containers');
+            const response = await fetch('/dashboard/api/docker/containers');
             if (!response.ok) throw new Error('Failed to fetch containers');
             
             const containers = await response.json();
@@ -268,7 +279,7 @@ class ServerDashboard {
             const type = document.getElementById('log-type').value;
             const lines = document.getElementById('log-lines').value;
             
-            const response = await fetch(`/api/system/logs?type=${type}&lines=${lines}`);
+            const response = await fetch(`/dashboard/api/system/logs?type=${type}&lines=${lines}`);
             if (!response.ok) throw new Error('Failed to fetch logs');
             
             const data = await response.json();
@@ -280,6 +291,10 @@ class ServerDashboard {
 
     updateStatsDisplay() {
         const { stats } = this.state;
+
+        //console.log('📊 Stats data:', stats);
+        //console.log('⏰ Uptime value:', stats.uptime);
+        //console.log('📅 Uptime type:', typeof stats.uptime);
         
         // Update overview cards
         this.updateElementText('cpu-usage', `${stats.cpu}%`);
@@ -290,7 +305,14 @@ class ServerDashboard {
         this.updateElementText('stat-containers', this.state.containers.length);
         this.updateElementText('stat-processes', '—'); // Would need additional API
         this.updateElementText('stat-load', '—'); // Would need additional API
-        this.updateElementText('stat-uptime', this.formatUptime(process.uptime()));
+        this.updateElementText('stat-uptime', this.formatUptime(stats.uptime));
+
+	// Uptime handling
+        if (stats.uptime !== undefined && !isNaN(stats.uptime)) {
+            this.updateElementText('stat-uptime', this.formatUptime(stats.uptime));
+        } else {
+            this.updateElementText('stat-uptime', '—');
+        }
     }
 
     updateSystemInfoDisplay(info) {
@@ -388,7 +410,7 @@ class ServerDashboard {
 
     async containerAction(containerId, action) {
         try {
-            const response = await fetch(`/api/docker/containers/${containerId}/${action}`, {
+            const response = await fetch(`/dashboard/api/docker/containers/${containerId}/${action}`, {
                 method: 'POST'
             });
             
@@ -416,7 +438,7 @@ class ServerDashboard {
         
         try {
             const promises = runningContainers.map(container => 
-                fetch(`/api/docker/containers/${container.id}/${action}`, { method: 'POST' })
+                fetch(`/dashboard/api/docker/containers/${container.id}/${action}`, { method: 'POST' })
             );
             
             await Promise.all(promises);
@@ -430,6 +452,17 @@ class ServerDashboard {
     }
 
     initializeCharts() {
+        // Destroy existing charts first
+        if (this.state.charts.cpu) {
+            this.state.charts.cpu.destroy();
+        }
+        if (this.state.charts.memory) {
+            this.state.charts.memory.destroy();
+        }
+        if (this.state.charts.network) {
+            this.state.charts.network.destroy();
+        }
+
         const cpuCtx = document.getElementById('cpu-chart')?.getContext('2d');
         const memoryCtx = document.getElementById('memory-chart')?.getContext('2d');
         const networkCtx = document.getElementById('network-chart')?.getContext('2d');
@@ -648,6 +681,7 @@ class ServerDashboard {
     }
 
     formatUptime(seconds) {
+        if (!seconds || isNaN(seconds)) return '—';
         const days = Math.floor(seconds / 86400);
         const hours = Math.floor((seconds % 86400) / 3600);
         return `${days}d ${hours}h`;

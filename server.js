@@ -11,8 +11,13 @@ const Docker = require('dockerode');
 const { createClient } = require('redis');
 const { RedisStore } = require('connect-redis');
 
+const http = require('http');
+const WebSocket = require('ws');
+
 const app = express();
 const docker = new Docker();
+
+const server = http.createServer(app);
 
 const redisClient = createClient({
   socket: {
@@ -36,6 +41,75 @@ const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || '0.0.0.0';
 const SESSION_SECRET = process.env.SESSION_SECRET || 'change_this_in_production';
 const USERS_FILE = path.join(__dirname, 'users.json');
+
+// WebSocket server setup
+const wss = new WebSocket.Server({ 
+  server, 
+  path: '/dashboard/ws'  // WebSocket endpoint
+});
+
+// Track connected clients
+const connectedClients = new Set();
+
+wss.on('connection', (ws, req) => {
+  // Simple auth check - only allow if they have our session cookie
+  if (!req.headers.cookie || !req.headers.cookie.includes('server_dashboard.sid')) {
+    ws.close(1008, 'Authentication required');
+    return;
+  }
+  
+  connectedClients.add(ws);
+  console.log('🔌 WebSocket client connected');
+  
+  ws.on('close', () => {
+    connectedClients.delete(ws);
+    console.log('🔌 WebSocket client disconnected');
+  });
+  
+  ws.on('error', (error) => {
+    console.error('WebSocket error:', error);
+    connectedClients.delete(ws);
+  });
+});
+
+// Function to broadcast to all clients
+function broadcastToClients(data) {
+  connectedClients.forEach(client => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(JSON.stringify(data));
+    }
+  });
+}
+
+// Real-time stats broadcasting
+setInterval(async () => {
+  if (connectedClients.size === 0) return; // No clients connected
+  
+  try {
+    const [currentLoad, mem, networkStats] = await Promise.all([
+      si.currentLoad(),
+      si.mem(),
+      si.networkStats()
+    ]);
+
+    const realTimeData = {
+      type: 'real-time-stats',
+      data: {
+        cpu: parseFloat(currentLoad.currentLoad.toFixed(1)),
+        memory: parseFloat(((mem.used / mem.total) * 100).toFixed(1)),
+        network: {
+          rx: (networkStats[0]?.rx_sec || 0) / 1024,
+          tx: (networkStats[0]?.tx_sec || 0) / 1024
+        },
+        timestamp: Date.now()
+      }
+    };
+
+    broadcastToClients(realTimeData);
+  } catch (error) {
+    console.error('WebSocket data error:', error);
+  }
+}, 2000); // Send updates every 2 seconds
 
 // Enhanced middleware stack
 //app.use(helmet({
@@ -396,13 +470,22 @@ app.use((error, req, res, next) => {
 });
 
 // Start server
-app.listen(PORT, HOST, () => {
+server.listen(PORT, HOST, () => {
   console.log(`Server Dashboard`);
   console.log(`📍 http://${HOST}:${PORT}`);
   console.log(`🔐 Authentication: Enabled`);
+  console.log(`📊 Real-time: WebSocket Enabled (2s updates)`);
   console.log(`🐳 Docker: ${process.env.ENABLE_DOCKER !== 'false' ? 'Enabled' : 'Disabled'}`);
   console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
 });
+
+// app.listen(PORT, HOST, () => {
+//   console.log(`Server Dashboard`);
+//   console.log(`📍 http://${HOST}:${PORT}`);
+//   console.log(`🔐 Authentication: Enabled`);
+//   console.log(`🐳 Docker: ${process.env.ENABLE_DOCKER !== 'false' ? 'Enabled' : 'Disabled'}`);
+//   console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
+// });
 
 process.on('uncaughtException', (error) => {
   console.error('Uncaught Exception:', error);

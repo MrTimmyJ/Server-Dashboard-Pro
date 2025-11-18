@@ -653,27 +653,6 @@ class ServerDashboard {
         };
     }
 
-    updateCharts(stats) {
-        const now = new Date().toLocaleTimeString();
-        
-        // CPU Chart
-        if (this.state.charts.cpu) {
-            this.updateChartData(this.state.charts.cpu, now, stats.cpu, 60);
-        }
-        
-        // Memory Chart
-        if (this.state.charts.memory) {
-            this.updateChartData(this.state.charts.memory, now, stats.memory, 60);
-        }
-        
-        // Network Chart (placeholder data)
-        if (this.state.charts.network) {
-            const download = Math.random() * 100;
-            const upload = Math.random() * 50;
-            this.updateChartData(this.state.charts.network, now, [download, upload], 60);
-        }
-    }
-
     updateChartData(chart, label, data, maxDataPoints) {
         chart.data.labels.push(label);
         chart.data.datasets.forEach((dataset, index) => {

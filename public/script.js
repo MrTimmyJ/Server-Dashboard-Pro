@@ -1,4 +1,3 @@
-// Server Dashboard Pro - Main JavaScript
 class ServerDashboard {
     constructor() {
         this.config = {
@@ -13,7 +12,8 @@ class ServerDashboard {
             stats: {},
             containers: [],
             charts: {},
-            lastUpdate: null
+            lastUpdate: null,
+			ws: null
         };
         
         this.chartData = {
@@ -27,13 +27,84 @@ class ServerDashboard {
 
     async init() {
         await this.checkAuth();
+		this.setupWebSocket();
         this.setupEventListeners();
         this.loadSettings();
         this.initializeCharts();
         //this.startPolling();
         this.hideLoadingScreen();
+		this.fetchAllData();
+    }
 
-	this.fetchAllData();
+	// WebSocket setup
+    setupWebSocket() {
+        try {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            this.state.ws = new WebSocket(`${protocol}//${window.location.host}/dashboard/ws`);
+            
+            this.state.ws.onopen = () => {
+                console.log('✅ WebSocket connected - real-time updates enabled');
+                this.showToast('Live updates enabled', 'success');
+                this.stopPolling(); // Stop HTTP polling since we have WebSocket
+            };
+            
+            this.state.ws.onmessage = (event) => {
+                const message = JSON.parse(event.data);
+                if (message.type === 'real-time-stats') {
+                    this.updateCharts(message.data); // Real-time chart updates
+                    this.updateQuickStats(message.data);
+                }
+            };
+            
+            this.state.ws.onclose = () => {
+                console.log('❌ WebSocket disconnected - falling back to polling');
+                this.showToast('Live updates disabled, using polling', 'warning');
+                this.startPolling(); // Fallback to normal polling
+            };
+            
+            this.state.ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+            };
+            
+        } catch (error) {
+            console.log('WebSocket not available, using polling:', error);
+            this.startPolling();
+        }
+    }
+
+    // Update quick stats in real-time
+    updateQuickStats(stats) {
+        // Update CPU and Memory percentages in real-time
+        this.updateElementText('cpu-usage', `${stats.cpu}%`);
+        this.updateElementText('memory-usage', `${stats.memory}%`);
+        
+        // Update network stats with real data
+        const networkRx = document.getElementById('network-rx');
+        const networkTx = document.getElementById('network-tx');
+        if (networkRx) networkRx.textContent = `${stats.network.rx.toFixed(1)} KB/s`;
+        if (networkTx) networkTx.textContent = `${stats.network.tx.toFixed(1)} KB/s`;
+    }
+
+    // Update charts with real-time data
+    updateCharts(stats) {
+        const now = new Date().toLocaleTimeString();
+        
+        // CPU Chart
+        if (this.state.charts.cpu) {
+            this.updateChartData(this.state.charts.cpu, now, stats.cpu, 60);
+        }
+        
+        // Memory Chart
+        if (this.state.charts.memory) {
+            this.updateChartData(this.state.charts.memory, now, stats.memory, 60);
+        }
+        
+        // Network Chart
+        if (this.state.charts.network) {
+            const download = stats.network.rx;
+            const upload = stats.network.tx;
+            this.updateChartData(this.state.charts.network, now, [download, upload], 60);
+        }
     }
 
     async checkAuth() {
@@ -235,18 +306,22 @@ class ServerDashboard {
     }
 
     async fetchSystemStats() {
-        try {
-            const response = await fetch('/dashboard/api/system/stats');
-            if (!response.ok) throw new Error('Failed to fetch stats');
-            
-            const stats = await response.json();
-            this.state.stats = stats;
-            this.updateStatsDisplay();
-            this.updateCharts(stats);
-        } catch (error) {
-            throw error;
-        }
-    }
+	    try {
+	        const response = await fetch('/dashboard/api/system/stats');
+	        if (!response.ok) throw new Error('Failed to fetch stats');
+	        
+	        const stats = await response.json();
+	        this.state.stats = stats;
+	        this.updateStatsDisplay();
+	        
+	        // Update charts if WebSocket is NOT connected
+	        if (!this.state.ws || this.state.ws.readyState !== WebSocket.OPEN) {
+	            this.updateCharts(stats);
+	        }
+	    } catch (error) {
+	        throw error;
+	    }
+	}
 
     async fetchSystemInfo() {
         try {

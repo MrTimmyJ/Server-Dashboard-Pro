@@ -1,44 +1,87 @@
 # Server Dashboard Pro
 A professional, production-grade server monitoring and management dashboard built with Node.js, Express, and modern web technologies.
 
-Author: Timothy Johnson <br>
-Date: October 2025 <br>
+**Author**: Timothy Johnson  
+**Date**: October to November 2025  
 
-**Live Demo**: http://143.198.51.64/dashboard/
+**Live Demos**: 
+- 🐳 **Docker Container**: http://143.198.51.64:3002/dashboard/
+- ☸️ **Kubernetes Deployment**: http://143.198.51.64:32657/dashboard/ 
+- 🚀 **Direct Deployment**: http://143.198.51.64/dashboard/
 
 ## Overview
+Server Dashboard Pro provides real-time system monitoring, Docker container management, and comprehensive server analytics through an intuitive web interface.
 
-Server Dashboard Pro provides real-time system monitoring, Docker container management, and comprehensive server analytics through an intuitive web interface.<br>
-
-Built with security and scalability in mind, it's designed for developers and system administrators who need robust server management capabilities.
+## 🚀 Deployment Architecture
+- **Docker Containerization**: Isolated environment with optimized Node.js runtime
+- **Kubernetes Orchestration**: Scalable container management with replica sets  
+- **Traditional Deployment**: Direct PM2 process management
+- **CI/CD Ready**: GitHub Actions pipeline for automated deployment
 
 ## ✨ Features
-
 ### 🔍 System Monitoring
 - **Real-time Metrics**: CPU, memory, storage, and network usage
 - **Live Charts**: Interactive performance graphs with Chart.js
 - **System Information**: OS details, kernel version, architecture, and hostname
-- **Uptime Tracking**: Server and application uptime monitoring
 
-### 🐳 Docker Management
-- **Container Overview**: List all running/stopped containers
+### 🐳 Docker & Kubernetes Integration
+- **Container Overview**: List all running/stopped containers via Docker API
 - **Container Controls**: Start, stop, restart containers via web interface
-- **Batch Operations**: Start/stop multiple containers simultaneously
-- **Container Status**: Real-time state monitoring
+- **Multi-Environment Deployment**: Docker, Kubernetes, and traditional deployment
 
 ### 🔐 Security & Authentication
 - **Secure Authentication**: BCrypt password hashing with session management
 - **Rate Limiting**: Protection against brute force attacks
 - **Session Security**: Redis-based session storage with secure cookies
-- **Helmet.js**: Security headers protection (configurable)
-- **Environment-based Configuration**: Separate settings for development/production
 
-### 🛠 Technical Features
-- **Responsive Design**: Works on desktop, tablet, and mobile
-- **Real-time Updates**: Auto-refreshing dashboard with configurable intervals
-- **RESTful API**: Clean API design for system data
-- **Error Handling**: Comprehensive error handling and logging
-- **PM2 Integration**: Process management and monitoring
+## 🧰 Technologies Used
+
+### 🌐 Backend & Runtime
+- **Node.js** - JavaScript runtime environment
+- **Express.js** - Web application framework
+- **WebSocket** - Real-time bidirectional communication
+- **PM2** - Production process manager
+- **Nginx** - Reverse proxy and web server
+
+### 🐳 Containerization & Orchestration
+- **Docker** - Application containerization
+- **Kubernetes** - Container orchestration and scaling
+- **k3s** - Lightweight Kubernetes distribution
+- **Helm** - Kubernetes package manager
+
+### 🔐 Authentication & Security
+- **bcrypt** - Password hashing (12-round salt)
+- **express-session** - Session management
+- **Redis** - Production session storage
+- **Helmet.js** - Security headers protection
+- **express-rate-limit** - API rate limiting
+- **CORS** - Cross-origin resource sharing
+
+### 📊 System Monitoring
+- **systeminformation** - Comprehensive system metrics
+- **Dockerode** - Docker API integration
+- **Chart.js** - Real-time performance charts
+
+### 🎨 Frontend & UI
+- **HTML5** - Semantic markup structure
+- **CSS3** - Modern styling with Flexbox/Grid
+- **JavaScript (ES6+)** - Frontend application logic
+- **Google Fonts (Inter)** - Typography
+- **CSS Custom Properties** - Theming system (dark/light mode)
+
+### 🔧 Development & Deployment
+- **Git** - Version control
+- **GitHub Actions** - CI/CD pipeline
+- **kubectl** - Kubernetes command-line tool
+- **SSH** - Secure server deployment
+- **npm** - Package management
+
+### 🛠 Infrastructure
+- **Ubuntu Server** - Operating system
+- **Redis Server** - Session storage database
+- **Docker** - Containerization platform
+- **Kubernetes (k3s)** - Container orchestration
+- **Let's Encrypt** - SSL certificates
 
 ## 🛡 Security Measures
 
@@ -70,9 +113,10 @@ Built with security and scalability in mind, it's designed for developers and sy
 |/api/auth/check	| GET	| Session validation	| Yes |
 |/api/login	| POST | User authentication	| No |
 |/api/logout	| POST	| Session termination	| Yes |
-|/api/system/stats	| GET	| System metrics	| Yes |
+|/api/system/stats	| GET	| Real-time system metrics	| Yes |
 |/api/system/info	| GET	| System information	| Yes |
 |/api/docker/containers	| GET	| Container list	| Yes |
+|WebSocket /dashboard/ws	| WS | Live data streaming | Yes |
 
 ## 🆚 Development vs Production
 
@@ -104,80 +148,7 @@ server-dashboard/<br>
 
 🖼️ Screenshots / Visuals
 
-🧰 Technologies Used
-🌐 Backend & Runtime
 
-    Node.js - JavaScript runtime environment
-
-    Express.js - Web application framework
-
-    PM2 - Production process manager
-
-    Nginx - Reverse proxy and web server
-
-🔐 Authentication & Security
-
-    bcrypt - Password hashing (12-round salt)
-
-    express-session - Session management
-
-    Redis - Production session storage (connect-redis)
-
-    Helmet.js - Security headers protection
-
-    express-rate-limit - API rate limiting
-
-    CORS - Cross-origin resource sharing
-
-📊 System Monitoring
-
-    systeminformation - Comprehensive system metrics (CPU, memory, storage, network, OS info)
-
-    Dockerode - Docker API integration for container management
-
-    Chart.js - Real-time performance charts and graphs
-
-💾 Data & File Management
-
-    fs-extra - Enhanced file system operations
-
-    path - File path utilities
-
-    dotenv - Environment variable management
-
-🎨 Frontend & UI
-
-    HTML5 - Semantic markup structure
-
-    CSS3 - Modern styling with Flexbox/Grid
-
-    JavaScript (ES6+) - Frontend application logic
-
-    Chart.js - Interactive data visualization
-
-    Google Fonts (Inter) - Typography
-
-    CSS Custom Properties - Theming system (dark/light mode)
-
-🔧 Development & Deployment
-
-    Git - Version control
-
-    GitHub Actions - CI/CD pipeline
-
-    SSH - Secure server deployment
-
-    npm - Package management
-
-🛠 Infrastructure
-
-    Ubuntu Server - Operating system
-
-    Redis Server - Session storage database
-
-    Docker - Containerization platform
-
-    Let's Encrypt (potential) - SSL certificates
 
 🚀 Getting Started
 
@@ -197,6 +168,10 @@ server-dashboard/<br>
     npm install -g pm2
 
     touch .env
+
+    ### Docker Deployment
+    docker build -t server-dashboard .
+    docker run -p 3000:3000 -d server-dashboard
 
 ⚙️ Configuration
 
